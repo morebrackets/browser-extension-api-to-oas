@@ -1,8 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const toggleBtn = document.getElementById("toggle-capture");
   const generateBtn = document.getElementById("generate");
   const copyBtn = document.getElementById("copy");
   const clearBtn = document.getElementById("clear");
   const oasOutput = document.getElementById("oas-output");
+  let currentTabId;
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    currentTabId = tabs[0].id;
+    chrome.runtime.sendMessage({ type: 'GET_STATUS', tabId: currentTabId }, (response) => {
+      updateButton(response.isDebugging);
+    });
+  });
+
+  toggleBtn.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: 'TOGGLE_DEBUGGER', tabId: currentTabId }, (response) => {
+      updateButton(response.isDebugging);
+    });
+  });
+
+  function updateButton(isDebugging) {
+    toggleBtn.textContent = isDebugging ? "Stop Capturing" : "Start Capturing";
+    toggleBtn.style.backgroundColor = isDebugging ? "#f44336" : "#4CAF50";
+    toggleBtn.style.color = "white";
+  }
 
   generateBtn.addEventListener("click", () => {
     chrome.storage.local.get({ requests: [] }, (result) => {
@@ -49,35 +70,30 @@ document.addEventListener("DOMContentLoaded", () => {
         responses: {},
       };
 
-      // Query parameters
       url.searchParams.forEach((value, name) => {
         operation.parameters.push({
           in: 'query',
           name: name,
-          schema: {
-            type: 'string',
-          },
+          schema: { type: 'string' },
         });
       });
 
-      // Request body
       if (req.requestBody) {
         operation.requestBody = {
           content: {
             'application/json': {
-              schema: generateSchema(req.requestBody),
+              schema: generateSchema(JSON.parse(req.requestBody)),
             },
           },
         };
       }
 
-      // Response body
       const status = req.status || '200';
       operation.responses[status] = {
         description: 'Successful response',
         content: {
           'application/json': {
-            schema: generateSchema(req.responseBody),
+            schema: generateSchema(JSON.parse(req.responseBody || '{}')),
           },
         },
       };

@@ -5,28 +5,13 @@
   "description": "Captures API requests and generates an OpenAPI Specification.",
   "permissions": [
     "storage",
-    "activeTab"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "activeTab",
+    "debugger"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_start"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["injector.js"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  }
 }
