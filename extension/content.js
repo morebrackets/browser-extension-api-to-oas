@@ -1,6 +1,9 @@
 (function() {
+  console.log("API to OAS content script loaded and active.");
+
   const originalFetch = window.fetch;
   window.fetch = async function(...args) {
+    console.log("API to OAS: intercepted fetch request.");
     const [url, config] = args;
     const response = await originalFetch(...args);
     const clonedResponse = response.clone();
@@ -18,7 +21,7 @@
         responseBody = responseText;
       }
 
-      chrome.runtime.sendMessage({
+      const message = {
         type: 'API_REQUEST',
         data: {
           ...requestData,
@@ -26,7 +29,9 @@
           status: clonedResponse.status,
           responseHeaders: Object.fromEntries(clonedResponse.headers.entries()),
         },
-      });
+      };
+      console.log("API to OAS: sending fetch data to background", message);
+      chrome.runtime.sendMessage(message);
     });
 
     return response;
@@ -34,6 +39,7 @@
 
   const originalXhrSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = function(body) {
+    console.log("API to OAS: intercepted XHR request.");
     const xhr = this;
     const originalOpen = xhr.open;
 
@@ -70,7 +76,7 @@
           });
       }
 
-      chrome.runtime.sendMessage({
+      const message = {
         type: 'API_REQUEST',
         data: {
           url: xhr._url,
@@ -80,7 +86,9 @@
           status: xhr.status,
           responseHeaders: responseHeaders,
         },
-      });
+      };
+      console.log("API to OAS: sending XHR data to background", message);
+      chrome.runtime.sendMessage(message);
     });
 
     originalXhrSend.apply(this, arguments);
